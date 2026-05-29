@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens ─────────────────────────────────────────── */
+:root {
+  --color-bg: #0f0f1a;
+  --color-surface: #161625;
+  --color-surface-alt: #1c1c30;
+  --color-accent-primary: #a5b4fc;
+  --color-accent-cyan: #22d3ee;
+  --color-text: #e2e8f0;
+  --color-text-muted: #94a3b8;
+  --color-border: #2a2a45;
+}
+
+/* ── Base resets ───────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ── Page background ───────────────────────────────────────── */
+body {
+  background-color: var(--color-bg);
+  min-height: 100vh;
+}
+
+/* ── Accessibility helpers ─────────────────────────────────── */
+.skip-link {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 50;
+  transform: translateY(-150%);
+  border-radius: 999px;
+  background: var(--color-accent-primary);
+  color: var(--color-bg);
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.625rem 1rem;
+  transition: transform 180ms ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* ── Scroll reveals ────────────────────────────────────────── */
+html.reveal-ready [data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 520ms ease,
+    transform 520ms ease;
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+html.reveal-ready [data-reveal].is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skip-link,
+  html.reveal-ready [data-reveal] {
+    transition: none;
+  }
+
+  html.reveal-ready [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Focus ring ────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-accent-primary);
+  outline-offset: 3px;
+}
+
+/* ── Reusable card surface ─────────────────────────────────── */
+.card-surface {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+}
+
+/* ── Utility: pill badge ───────────────────────────────────── */
+@layer components {
+  .pill {
+    @apply inline-block px-3 py-0.5 rounded-full text-xs font-medium;
+  }
+  .pill-primary {
+    @apply pill bg-indigo-900 text-indigo-200;
+  }
+  .pill-cyan {
+    @apply pill bg-cyan-900 text-cyan-200;
+  }
+}

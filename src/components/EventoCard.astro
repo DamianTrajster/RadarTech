@@ -1,0 +1,145 @@
+---
+import { getEventoStatus, buildGoogleCalendarUrl } from '../lib/eventos.js';
+
+interface Props {
+  evento: {
+    id: string;
+    nombre: string;
+    resumen: string;
+    fechaTexto: string;
+    fechaInicio: string;
+    fechaFin: string;
+    lugar: string;
+    modalidad: string;
+    categorias: string[];
+    precio: string | undefined;
+    urlOficial: string | undefined;
+    confirmado: boolean;
+    estadoManual?: string;
+  };
+}
+
+const { evento } = Astro.props;
+
+const status = getEventoStatus(evento);
+const calendarUrl = buildGoogleCalendarUrl(evento);
+
+const statusColors: Record<string, string> = {
+  'Próximo': 'bg-emerald-900 text-emerald-200 border border-emerald-700',
+  'Pasado': 'bg-slate-800 text-slate-300 border border-slate-600',
+  'A confirmar': 'bg-amber-900 text-amber-200 border border-amber-700',
+};
+
+const statusColor = statusColors[status] ?? statusColors['A confirmar'];
+
+const categoryBadgeColor = 'bg-indigo-900 text-indigo-200';
+---
+
+<article
+  class="card-surface h-full p-5 flex flex-col gap-4 group hover:border-[var(--color-accent-primary)] transition-colors"
+  data-event-status-scope
+  data-fecha-fin={evento.fechaFin}
+  data-confirmado={String(evento.confirmado !== false)}
+  data-estado-manual={evento.estadoManual ?? ''}
+>
+  <!-- Header: name + status badge -->
+  <div class="flex items-start justify-between gap-3">
+    <h2 class="text-base font-semibold text-[var(--color-text)] leading-snug">
+      <a href={`/eventos/${evento.id}`} class="hover:text-[var(--color-accent-primary)] transition-colors">
+        {evento.nombre}
+      </a>
+    </h2>
+    <span class={`shrink-0 pill ${statusColor}`} data-event-status>{status}</span>
+  </div>
+
+  <!-- Summary / description -->
+  <p class="text-sm text-[var(--color-text-muted)] leading-relaxed line-clamp-2">
+    {evento.resumen}
+  </p>
+
+  <!-- Date -->
+  <p class="text-sm text-[var(--color-text-muted)] flex items-center gap-1.5">
+    <svg class="w-4 h-4 text-[var(--color-accent-cyan)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="18" rx="2" stroke-width="1.5"/>
+      <path d="M16 2v4M8 2v4M3 10h18" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    {evento.fechaTexto}
+  </p>
+
+  <!-- Place + Modality -->
+  <p class="text-sm text-[var(--color-text-muted)] flex items-center gap-1.5">
+    <svg class="w-4 h-4 text-[var(--color-accent-cyan)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke-width="1.5"/>
+      <circle cx="12" cy="9" r="2.5" stroke-width="1.5"/>
+    </svg>
+    {evento.lugar}
+    {evento.modalidad !== 'Presencial' && (
+      <span class="ml-1 text-xs text-[var(--color-text-muted)] opacity-75">· {evento.modalidad}</span>
+    )}
+  </p>
+
+  <!-- Category badges -->
+  <div class="flex flex-wrap gap-1.5">
+    {evento.categorias.map((cat) => (
+      <span class={`pill ${categoryBadgeColor}`}>{cat}</span>
+    ))}
+  </div>
+
+  <!-- Price -->
+  {evento.precio && (
+    <p class="text-sm font-medium text-[var(--color-text)]">
+      {evento.precio === 'Gratis' ? (
+        <span class="text-emerald-400">Gratis</span>
+      ) : evento.precio === 'A confirmar' ? (
+        <span class="text-amber-400">A confirmar</span>
+      ) : (
+        evento.precio
+      )}
+    </p>
+  )}
+
+  <!-- Actions -->
+  <div class="mt-auto pt-2 flex flex-wrap items-center gap-3 border-t border-[var(--color-border)]">
+    <a
+      href={`/eventos/${evento.id}`}
+      aria-label={`Ver detalles de ${evento.nombre}`}
+      class="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-indigo-300 via-violet-300 to-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-indigo-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-cyan-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-cyan)]"
+    >
+      Ver detalles
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+
+    {calendarUrl ? (
+      <a
+        href={calendarUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`Agregar ${evento.nombre} a Google Calendar`}
+        class="inline-flex items-center gap-1.5 ml-auto text-xs font-medium text-[var(--color-text-muted)] border border-[var(--color-border)] rounded-lg px-3 py-1.5 hover:border-[var(--color-accent-cyan)] hover:text-[var(--color-accent-cyan)] transition-colors"
+        title="Agregar a Google Calendar"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="18" rx="2" stroke-width="1.5"/>
+          <path d="M16 2v4M8 2v4M3 10h18" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01M16 17h.01" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Google Calendar
+      </a>
+    ) : (
+      <span
+        class="ml-auto inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)] opacity-40 border border-[var(--color-border)] rounded-lg px-3 py-1.5 cursor-not-allowed"
+        title="Fecha o asistencia no confirmada"
+        aria-disabled="true"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="18" rx="2" stroke-width="1.5"/>
+          <path d="M16 2v4M8 2v4M3 10h18" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01M16 17h.01" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Google Calendar
+      </span>
+    )}
+  </div>
+</article>

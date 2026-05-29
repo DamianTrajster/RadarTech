@@ -1,0 +1,201 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+  canonicalPath?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  structuredData?: Record<string, unknown> | Record<string, unknown>[];
+}
+
+const {
+  title = 'RadarTech BA — Eventos de Tecnología en Buenos Aires',
+  description = 'Descubrí eventos de tecnología en Buenos Aires y Argentina. Buscá, filtrá por categoría y agregalos a tu Google Calendar.',
+  canonicalPath,
+  image,
+  type = 'website',
+  structuredData,
+} = Astro.props;
+
+const configuredSiteUrl = import.meta.env.PUBLIC_SITE_URL?.trim().replace(/\/$/, '');
+const siteUrl = configuredSiteUrl || Astro.site?.href.replace(/\/$/, '');
+const canonicalUrl = siteUrl
+  ? new URL(canonicalPath ?? Astro.url.pathname, siteUrl).toString()
+  : undefined;
+const imageUrl = siteUrl && image ? new URL(image, siteUrl).toString() : undefined;
+const structuredDataJson = structuredData
+  ? JSON.stringify(structuredData).replace(/</g, '\\u003c')
+  : undefined;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f0f1a" />
+    <meta property="og:locale" content="es_AR" />
+    <meta property="og:type" content={type} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+    {imageUrl && <meta property="og:image" content={imageUrl} />}
+    <meta name="twitter:card" content={imageUrl ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {imageUrl && <meta name="twitter:image" content={imageUrl} />}
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+    <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {structuredDataJson && (
+      <script type="application/ld+json" set:html={structuredDataJson} />
+    )}
+  </head>
+  <body>
+    <a class="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
+    <slot />
+    <footer
+      style="text-align:center;padding:2rem 1rem;color:var(--color-text-muted);font-size:0.875rem;"
+    >
+      <p>
+        Hecho con corazón ❤️ por
+        <a
+          href="https://www.linkedin.com/in/damian-trajster/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style="color:var(--color-accent-primary);font-weight:600;"
+        >
+          Damian Trajster
+        </a>
+      </p>
+    </footer>
+    <script is:inline>
+      (() => {
+        const revealItems = document.querySelectorAll('[data-reveal]');
+        if (!revealItems.length) return;
+
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReducedMotion || !('IntersectionObserver' in window)) {
+          revealItems.forEach((item) => item.classList.add('is-visible'));
+          return;
+        }
+
+        document.documentElement.classList.add('reveal-ready');
+
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          });
+        }, { threshold: 0.12, rootMargin: '0px 0px -48px 0px' });
+
+        revealItems.forEach((item, index) => {
+          item.style.setProperty('--reveal-delay', `${Math.min(index * 45, 240)}ms`);
+          observer.observe(item);
+        });
+      })();
+
+      (() => {
+        const statusStyles = {
+          'Próximo': 'bg-emerald-900 text-emerald-200 border border-emerald-700',
+          'Pasado': 'bg-slate-800 text-slate-300 border border-slate-600',
+          'A confirmar': 'bg-amber-900 text-amber-200 border border-amber-700',
+        };
+
+        function todayMidnight() {
+          const today = new Date();
+          return new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        }
+
+        function parseLocalDate(value) {
+          const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value ?? '');
+          if (!match) return null;
+
+          const year = Number(match[1]);
+          const month = Number(match[2]);
+          const day = Number(match[3]);
+          const date = new Date(year, month - 1, day);
+
+          if (
+            date.getFullYear() !== year ||
+            date.getMonth() !== month - 1 ||
+            date.getDate() !== day
+          ) {
+            return null;
+          }
+
+          return date;
+        }
+
+        function calculateStatus(scope, today) {
+          if (scope.dataset.estadoManual === 'a-confirmar' || scope.dataset.confirmado === 'false') {
+            return 'A confirmar';
+          }
+
+          const endDate = parseLocalDate(scope.dataset.fechaFin);
+          if (!endDate) return 'A confirmar';
+
+          return endDate < today ? 'Pasado' : 'Próximo';
+        }
+
+        function refreshEventStatuses() {
+          const statusScopes = document.querySelectorAll('[data-event-status-scope]');
+          if (!statusScopes.length) return;
+
+          const today = todayMidnight();
+          let changed = false;
+
+          statusScopes.forEach((scope) => {
+            const badge = scope.querySelector('[data-event-status]');
+            if (!badge) return;
+
+            const status = calculateStatus(scope, today);
+            const currentStatus = badge.textContent?.trim() ?? '';
+
+            if (currentStatus !== status) changed = true;
+
+            badge.textContent = status;
+            badge.setAttribute('data-status', status);
+            const extraClass = badge.dataset.eventStatusExtraClass ?? '';
+            badge.className = `shrink-0 pill ${extraClass} ${statusStyles[status] ?? statusStyles['A confirmar']}`.trim();
+
+            const eventCard = scope.closest('#events-grid > [data-nombre]');
+            if (eventCard) eventCard.dataset.estado = status;
+          });
+
+          if (changed) {
+            document.dispatchEvent(new CustomEvent('event-status:updated'));
+          }
+        }
+
+        function scheduleNextStatusRefresh() {
+          const now = new Date();
+          const nextRefresh = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate() + 1,
+            0,
+            1,
+            0,
+            0,
+          );
+
+          window.setTimeout(() => {
+            refreshEventStatuses();
+            scheduleNextStatusRefresh();
+          }, Math.max(nextRefresh.getTime() - now.getTime(), 60000));
+        }
+
+        refreshEventStatuses();
+        scheduleNextStatusRefresh();
+      })();
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  @import '../styles/global.css';
+</style>

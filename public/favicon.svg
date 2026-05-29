@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="RadarTech BA favicon">
+  <defs>
+    <linearGradient id="bg" x1="8" x2="56" y1="8" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0b1020"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="pulse" x1="16" x2="48" y1="16" y2="48" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+  <path d="M32 13a19 19 0 1 1 0 38 19 19 0 0 1 0-38Z" fill="none" stroke="#1f2937" stroke-width="2"/>
+  <path d="M32 20a12 12 0 1 1 0 24 12 12 0 0 1 0-24Z" fill="none" stroke="#334155" stroke-width="2"/>
+  <path d="M32 7v8M32 49v8M7 32h8M49 32h8" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="32" cy="32" r="6" fill="url(#pulse)"/>
+  <path d="M32 32 45 19" stroke="#e0e7ff" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="32" cy="32" r="2" fill="#f8fafc"/>
+</svg>

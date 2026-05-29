@@ -1,0 +1,97 @@
+---
+// Filtros component — search, category filters, and status filters
+
+interface Props {
+  categorias: string[];
+}
+
+const { categorias } = Astro.props;
+---
+
+<div class="space-y-4">
+  <p id="filters-help" class="sr-only">
+    Filtrá eventos por nombre, categoría o estado. Los resultados se actualizan automáticamente.
+  </p>
+
+  <!-- Search input -->
+  <div class="relative">
+    <label for="search-input" class="sr-only">Buscar eventos por nombre</label>
+    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="11" cy="11" r="8" stroke-width="2"/>
+      <path stroke-width="2" d="m21 21-4.35-4.35" stroke-linecap="round"/>
+    </svg>
+    <input
+      id="search-input"
+      type="search"
+      autocomplete="off"
+      aria-describedby="filters-help"
+      placeholder="Buscar por nombre del evento..."
+      class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg pl-10 pr-4 py-2.5 text-sm text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-primary)] focus:border-transparent transition-colors"
+    />
+  </div>
+
+  <!-- Category pills -->
+  <fieldset>
+    <legend class="sr-only">Filtrar por categoría</legend>
+    <div id="category-filters" class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        data-categoria="todos"
+        aria-pressed="true"
+        class="category-pill px-3 py-1.5 rounded-full text-xs font-medium border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:border-[var(--color-accent-primary)] hover:text-[var(--color-accent-primary)] transition-colors selected"
+      >
+        Todos
+      </button>
+      {categorias.map((cat) => (
+        <button
+          type="button"
+          data-categoria={cat}
+          aria-pressed="false"
+          class="category-pill px-3 py-1.5 rounded-full text-xs font-medium border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:border-[var(--color-accent-primary)] hover:text-[var(--color-accent-primary)] transition-colors"
+        >
+          {cat}
+        </button>
+      ))}
+    </div>
+  </fieldset>
+
+  <!-- Status pills -->
+  <fieldset>
+    <legend class="sr-only">Filtrar por estado</legend>
+    <div id="status-filters" class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        data-estado="todos"
+        aria-pressed="true"
+        class="status-pill px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:border-[var(--color-accent-cyan)] hover:text-[var(--color-accent-cyan)] transition-colors selected"
+      >
+        Todos
+      </button>
+      <button
+        type="button"
+        data-estado="Próximo"
+        aria-pressed="false"
+        class="status-pill px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:border-[var(--color-accent-cyan)] hover:text-[var(--color-accent-cyan)] transition-colors"
+      >
+        Próximos
+      </button>
+      <button
+        type="button"
+        data-estado="Pasado"
+        aria-pressed="false"
+        class="status-pill px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:border-[var(--color-accent-cyan)] hover:text-[var(--color-accent-cyan)] transition-colors"
+      >
+        Pasados
+      </button>
+    </div>
+  </fieldset>
+</div>
+
+<style>
+  .category-pill.selected,
+  .status-pill.selected {
+    border-color: var(--color-accent-primary);
+    color: var(--color-accent-primary);
+    background-color: rgba(165, 180, 252, 0.1);
+  }
+</style>

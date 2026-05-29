@@ -1,0 +1,162 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Filtros from '../components/Filtros.astro';
+import EventoCard from '../components/EventoCard.astro';
+import { getEventos } from '../lib/eventos.js';
+
+const eventos = await getEventos();
+// Unique sorted categories
+const categorias = [...new Set(eventos.flatMap((e) => e.categorias))].sort();
+
+const pageTitle = 'RadarTech BA — Eventos de Tecnología en Buenos Aires';
+const pageDescription = 'Descubrí eventos de tecnología en Buenos Aires y Argentina. Buscá, filtrá por categoría y agregalos a tu Google Calendar.';
+const siteUrl = import.meta.env.PUBLIC_SITE_URL?.trim().replace(/\/$/, '') || Astro.site?.href.replace(/\/$/, '');
+const structuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'RadarTech BA',
+    description: pageDescription,
+    ...(siteUrl ? { url: siteUrl } : {}),
+  },
+  ...(siteUrl
+    ? [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: 'Eventos de tecnología en Buenos Aires',
+          itemListElement: eventos.map((evento, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: evento.nombre,
+            url: new URL(`/eventos/${evento.id}`, siteUrl).toString(),
+          })),
+        },
+      ]
+    : []),
+];
+---
+
+<Layout title={pageTitle} description={pageDescription} canonicalPath="/" structuredData={structuredData}>
+  <Header />
+
+  <main id="contenido-principal" class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    <!-- Hero -->
+    <section class="text-center py-8" data-reveal>
+      <h1 class="text-3xl font-bold text-[var(--color-text)] mb-3">
+        Eventos tech en Buenos Aires
+      </h1>
+      <p class="text-[var(--color-text-muted)] max-w-xl mx-auto">
+        Conferencias, meetups y workshops para developers, testers y profesionales tech.
+        Encontrá tu próximo evento y agregalo a tu calendario.
+      </p>
+    </section>
+
+    <!-- Filters -->
+    <section aria-label="Filtros" data-reveal>
+      <Filtros categorias={categorias} />
+    </section>
+
+    <!-- Event grid -->
+    <section id="events-grid" aria-label="Eventos" class="grid auto-rows-fr grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {eventos.map((evento) => (
+        <div class="h-full" data-reveal data-categoria={evento.categorias.join(',')} data-nombre={evento.nombre.toLowerCase()}>
+          <EventoCard evento={evento} />
+        </div>
+      ))}
+    </section>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="hidden text-center py-16" hidden aria-live="polite">
+      <svg class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" stroke-width="1.5"/>
+        <path d="m21 21-4.35-4.35" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <p class="text-[var(--color-text-muted)] text-sm">No hay eventos que coincidan con tu búsqueda.</p>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  const searchInput = document.getElementById('search-input') as HTMLInputElement;
+  const categoryPills = document.querySelectorAll<HTMLButtonElement>('.category-pill');
+  const statusPills = document.querySelectorAll<HTMLButtonElement>('.status-pill');
+  const eventCards = document.querySelectorAll<HTMLElement>('#events-grid > [data-nombre]');
+  const emptyState = document.getElementById('empty-state') as HTMLElement;
+
+  let selectedCategory = 'todos';
+  let selectedStatus = 'todos';
+  let searchQuery = '';
+
+  function getStatus(evento: Element): string {
+    if (evento instanceof HTMLElement && evento.dataset['estado']) {
+      return evento.dataset['estado'];
+    }
+
+    // The status badge text in the card
+    const badge = evento.querySelector('[data-event-status]');
+    if (!badge) return '';
+    return badge.textContent?.trim() ?? '';
+  }
+
+  function filterEvents() {
+    let visibleCount = 0;
+
+    eventCards.forEach((card) => {
+      const nombre = card.dataset['nombre'] ?? '';
+      const categorias = card.dataset['categoria']?.split(',') ?? [];
+      const cardStatus = getStatus(card);
+
+      const matchesSearch = searchQuery === '' || nombre.includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'todos' || categorias.includes(selectedCategory);
+      const matchesStatus = selectedStatus === 'todos' || cardStatus === selectedStatus;
+
+      if (matchesSearch && matchesCategory && matchesStatus) {
+        card.hidden = false;
+        visibleCount++;
+      } else {
+        card.hidden = true;
+      }
+    });
+
+    emptyState.classList.toggle('hidden', visibleCount > 0);
+    emptyState.hidden = visibleCount > 0;
+  }
+
+  // Search
+  searchInput.addEventListener('input', () => {
+    searchQuery = searchInput.value.trim();
+    filterEvents();
+  });
+
+  // Category pills
+  categoryPills.forEach((pill) => {
+    pill.addEventListener('click', () => {
+      selectedCategory = pill.dataset['categoria'] ?? 'todos';
+      categoryPills.forEach((p) => {
+        p.classList.remove('selected');
+        p.setAttribute('aria-pressed', 'false');
+      });
+      pill.classList.add('selected');
+      pill.setAttribute('aria-pressed', 'true');
+      filterEvents();
+    });
+  });
+
+  // Status pills
+  statusPills.forEach((pill) => {
+    pill.addEventListener('click', () => {
+      selectedStatus = pill.dataset['estado'] ?? 'todos';
+      statusPills.forEach((p) => {
+        p.classList.remove('selected');
+        p.setAttribute('aria-pressed', 'false');
+      });
+      pill.classList.add('selected');
+      pill.setAttribute('aria-pressed', 'true');
+      filterEvents();
+    });
+  });
+
+  document.addEventListener('event-status:updated', filterEvents);
+</script>
